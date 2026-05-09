@@ -11,6 +11,7 @@ const fadeUp = {
     transition: {
       delay: i * 0.1,
       duration: 0.7,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ease: [0.16, 1, 0.3, 1] as any,
     },
   }),
