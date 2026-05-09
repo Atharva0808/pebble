@@ -60,9 +60,9 @@ DATA_DIR = "/kaggle/working/pebble_data"
 CHECKPOINT_DIR = f"{OUTPUT_DIR}/checkpoints"
 
 # Training hyperparameters
-BATCH_SIZE = 4
-GRAD_ACCUM_STEPS = 8
-SEQ_LEN = 1024
+BATCH_SIZE = 2
+GRAD_ACCUM_STEPS = 16
+SEQ_LEN = 512
 MAX_STEPS = 30000
 LR = 3e-4
 MIN_LR = 3e-5
