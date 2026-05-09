@@ -1,149 +1,74 @@
 # Pebble
 
-**A 120M parameter general-purpose language model built from scratch on the Mamba-2 Selective State Space architecture.**
+Pebble is a 120M-parameter general-purpose small language model (SLM) built entirely from scratch based on the Mamba-2 Selective State Space architecture. 
 
-Small model, serious intelligence.
+It was engineered to completely bypass the quadratic constraints of traditional Transformer models, offering theoretically infinite context length, linear-time inference, and a constant memory footprint during generation. 
 
----
+The project includes the raw PyTorch implementation of the Mamba-2 architecture, a comprehensive training and data pipeline, and a highly optimized Next.js frontend capable of running the model entirely in the browser via WebGPU.
 
-## What is Pebble?
+## Features
 
-Pebble is a complete, from-scratch implementation of a Selective State Space Model (SSM) language model. While the industry iterates on Transformer architectures, Pebble moves to the next generation — replacing quadratic self-attention with **linear-time recurrence**.
-
-### Key Properties
-
-| Property | Value |
-| :--- | :--- |
-| Parameters | ~120M |
-| Architecture | Mamba-2 (Selective State Space) |
-| Inference Complexity | O(n) linear |
-| Memory Complexity | O(1) constant |
-| Context Window | Theoretically infinite |
-| Training Cost | $0 (Kaggle free tier) |
-| Deployment | WebGPU (browser-native) |
-
----
-
-## Project Structure
-
-```
-pebble/
-├── ml/                         # ML Engine
-│   ├── pebble/
-│   │   ├── config.py           # Model hyperparameters
-│   │   ├── model.py            # Mamba-2 architecture (from scratch)
-│   │   ├── tokenizer.py        # Custom BPE tokenizer
-│   │   ├── dataset.py          # Memory-mapped data pipeline
-│   │   └── utils.py            # Checkpointing, diagnostics
-│   ├── train.py                # Training script (AMP, grad accum, cosine LR)
-│   ├── generate.py             # Text generation (top-k, top-p, temperature)
-│   ├── export_onnx.py          # ONNX export for WebGPU deployment
-│   └── requirements.txt
-│
-└── web/                        # Next.js Frontend
-    └── app/
-        ├── layout.tsx          # Root layout with SEO
-        ├── globals.css         # Swiss editorial design system
-        └── page.tsx            # Landing page
-```
-
----
+* Linear-Time Inference: The selective scan mechanism processes tokens in O(n) time, guaranteeing that inference speed remains constant regardless of the context size.
+* Constant Memory Generation: The hidden state compresses the context into a fixed-size vector. During generation, memory usage is O(1), completely eliminating the KV-cache explosion found in Transformers.
+* Zero-Order Hold Discretization: Continuous-time state equations are discretized using input-dependent step sizes, allowing the model to dynamically control its temporal resolution per token.
+* Pure PyTorch Implementation: Every layer, convolution, and optimization is implemented natively in PyTorch without relying on external pre-built Mamba libraries.
+* Browser-Native Execution: The model can be exported to ONNX format and executed locally in any modern browser via WebGPU, removing all backend latency and server costs.
 
 ## Architecture
 
-Pebble implements the **Mamba-2 Selective State Space Model**:
+The model implements a deep residual architecture with 24 layers. Each layer is constructed as follows:
 
-```
-Input → Embedding → [RMSNorm → Conv1D → SiLU → Selective SSM → Gate → Project] × 24 → Norm → LM Head
-```
+1. Token Embedding: Translates the 32k vocabulary into a 768-dimensional space.
+2. RMSNorm: Pre-normalization applied before the main block for stable gradient flow.
+3. Causal Conv1D: Extracts local context across sequence tokens.
+4. Selective SSM: The core recurrent block utilizing input-dependent selection parameters to learn what to remember and what to forget.
+5. Gated Output Projection: Uses a SiLU activation to gate the recurrent output back into the primary residual stream.
 
-### The Selective Scan 
-```
-h_t = exp(Δ_t · A) · h_{t-1} + (Δ_t · B_t) · x_t
-y_t = C_t · h_t + D · x_t
-```
+## Repository Structure
 
-Where Δ (delta) is **input-dependent** — the model learns what to remember and what to forget at every timestep.
+The repository is divided into two main environments: the machine learning backend and the frontend client.
 
----
+### /ml (Machine Learning Engine)
+Contains the core PyTorch model, dataset processing, and training routines.
+* pebble/: The Python package containing the model architecture, configuration, and custom tokenizer.
+* prepare_data.py: Downloads and tokenizes the training corpus, saving it in chunked binary formats for high-speed disk reads.
+* train.py: The main training loop featuring Automatic Mixed Precision (AMP), gradient accumulation, and learning rate scheduling.
+* kaggle_train.py: An orchestrated script designed to run the entire pipeline end-to-end on cloud environments like Kaggle.
+* export_onnx.py: Converts the trained .pt PyTorch weights into ONNX format for web deployment.
 
-## Quick Start
+### /web (Frontend & WebGPU Inference)
+A Next.js application that serves as the landing page and inference engine.
+* Built with Next.js App Router and TypeScript.
+* Uses Framer Motion for UI interactions and transitions.
+* Implements ONNX Runtime Web to execute the model locally on the user's GPU.
+* The frontend uses a highly deliberate, minimalist Swiss-editorial design system built with vanilla CSS.
 
-### ML Engine
+## Getting Started
+
+### Training the Model
+To train the model from scratch, navigate to the `ml` directory. Ensure you have PyTorch installed with CUDA support.
 
 ```bash
-# Install dependencies
 cd ml
 pip install -r requirements.txt
-
-# Verify the model
-python -c "
-from pebble import PebbleConfig, PebbleLMHeadModel
-config = PebbleConfig()
-model = PebbleLMHeadModel(config)
-print(f'Pebble: {model.count_parameters() / 1e6:.1f}M parameters')
-"
-
-# Train
-python train.py \
-    --data_path data/train.bin \
-    --output_dir checkpoints/ \
-    --batch_size 4 \
-    --grad_accum_steps 8 \
-    --max_steps 50000 \
-    --use_wandb
-
-# Generate
-python generate.py \
-    --checkpoint checkpoints/checkpoint_latest.pt \
-    --tokenizer tokenizer.json \
-    --prompt "The future of artificial intelligence"
+python prepare_data.py
+python train.py
 ```
 
-### Web Frontend
+For cloud training (e.g., Kaggle or Google Colab), simply upload the `ml` directory and run:
+```bash
+python kaggle_train.py
+```
+
+### Running the Web Interface
+To run the frontend and the interactive model playground locally:
 
 ```bash
 cd web
 bun install
 bun run dev
 ```
+The interface will be available at http://localhost:3000.
 
----
-
-## Training Pipeline
-
-1. **Data Curation**: Synthetic high-reasoning data via knowledge distillation from frontier models
-2. **Tokenization**: Custom BPE tokenizer (32k vocab) trained on the curated corpus
-3. **Pre-tokenization**: Convert to memory-mapped binary format for zero-overhead data loading
-4. **Training**: Mixed precision (FP16), gradient accumulation, cosine annealing LR
-5. **Evaluation**: MMLU, HellaSwag, and custom reasoning benchmarks
-6. **Export**: ONNX → WebGPU for browser-native inference
-
----
-
-## Tech Stack
-
-| Component | Technology |
-| :--- | :--- |
-| Language | Python 3.10+ |
-| Framework | PyTorch 2.2+ |
-| Tokenizer | HuggingFace Tokenizers |
-| Tracking | Weights & Biases |
-| Training | Kaggle (2× T4 GPUs, free) |
-| Frontend | Next.js + Bun |
-| Deployment | ONNX + WebGPU |
-| Design | Swiss Editorial (Vanilla CSS) |
-
----
-
-## Why Mamba?
-
-Transformers have a fundamental bottleneck: **quadratic attention**. As context length grows, memory and compute explode. This limits practical deployment on consumer hardware.
-
-Mamba replaces attention with a **Selective State Space** recurrence:
-- **Linear time**: Process any sequence length at constant speed
-- **Constant memory**: Hidden state compresses the full context
-- **Hardware efficient**: No KV-cache, no attention matrix materialization
-
-Pebble proves this architecture works at the small model scale — delivering competitive reasoning with 10× fewer parameters than Transformer baselines.
-
+## License
+MIT License
