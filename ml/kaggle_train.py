@@ -63,16 +63,16 @@ CHECKPOINT_DIR = f"{OUTPUT_DIR}/checkpoints"
 BATCH_SIZE = 2
 GRAD_ACCUM_STEPS = 16
 SEQ_LEN = 512
-MAX_STEPS = 1000
+MAX_STEPS = 30000
 LR = 3e-4
 MIN_LR = 3e-5
 WARMUP_STEPS = 1000
 WEIGHT_DECAY = 0.1
 MAX_GRAD_NORM = 1.0
 DTYPE = "float16"
-LOG_INTERVAL = 50
+LOG_INTERVAL = 25
 SAVE_INTERVAL = 100
-EVAL_INTERVAL = 200
+EVAL_INTERVAL = 100
 MAX_DATA_SAMPLES = 300000
 VOCAB_SIZE = 32000
 
@@ -182,6 +182,14 @@ config = PebbleConfig(
     max_seq_len=SEQ_LEN,
 )
 model = PebbleLMHeadModel(config).to(device)
+
+# Enable torch.compile for 2x-3x speedup on Kaggle (Linux)
+if hasattr(torch, "compile") and sys.platform != "win32":
+    print("  [System] Compiling model for speed (Selective Scan optimization)...")
+    try:
+        model = torch.compile(model)
+    except Exception as e:
+        print(f"  [Warning] torch.compile failed: {e}. Falling back to eager mode.")
 
 param_info = count_parameters(model)
 print(f"  Parameters: {param_info['total_millions']}M")
