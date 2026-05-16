@@ -1,74 +1,121 @@
 # Pebble
 
-Pebble is a 120M-parameter general-purpose small language model (SLM) built entirely from scratch based on the Mamba-2 Selective State Space architecture. 
+A 120M-parameter general-purpose language model built entirely from scratch on the **Mamba-2 Selective State Space** architecture.
 
-It was engineered to completely bypass the quadratic constraints of traditional Transformer models, offering theoretically infinite context length, linear-time inference, and a constant memory footprint during generation. 
+Pebble bypasses the quadratic constraints of Transformer models entirely — delivering **linear-time inference**, **theoretically infinite context**, and a **constant memory footprint** during generation. The entire implementation is written in raw PyTorch with zero external Mamba libraries.
 
-The project includes the raw PyTorch implementation of the Mamba-2 architecture, a comprehensive training and data pipeline, and a highly optimized Next.js frontend capable of running the model entirely in the browser via WebGPU.
+> **Key Innovation:** While Transformers must re-examine every previous token for each new word generated (O(n²) attention), Pebble compresses context into a fixed-size hidden state that evolves with each token — achieving O(n) time complexity with O(1) memory.
 
-## Features
+## Technical Highlights
 
-* Linear-Time Inference: The selective scan mechanism processes tokens in O(n) time, guaranteeing that inference speed remains constant regardless of the context size.
-* Constant Memory Generation: The hidden state compresses the context into a fixed-size vector. During generation, memory usage is O(1), completely eliminating the KV-cache explosion found in Transformers.
-* Zero-Order Hold Discretization: Continuous-time state equations are discretized using input-dependent step sizes, allowing the model to dynamically control its temporal resolution per token.
-* Pure PyTorch Implementation: Every layer, convolution, and optimization is implemented natively in PyTorch without relying on external pre-built Mamba libraries.
-* Browser-Native Execution: The model can be exported to ONNX format and executed locally in any modern browser via WebGPU, removing all backend latency and server costs.
+| Feature | Details |
+|---|---|
+| **Architecture** | Mamba-2 Selective State Space Model (24 layers, 768d) |
+| **Parameters** | 120M (weight-tied embedding + LM head) |
+| **Inference** | O(n) time, O(1) memory — no KV-cache |
+| **Context** | Theoretically infinite (no position embeddings) |
+| **Training** | Mixed-precision FP16, gradient checkpointing, cosine LR |
+| **Deployment** | ONNX export → WebGPU → runs entirely in-browser |
 
 ## Architecture
 
-The model implements a deep residual architecture with 24 layers. Each layer is constructed as follows:
+Each of the 24 residual layers implements the full Mamba-2 block:
 
-1. Token Embedding: Translates the 32k vocabulary into a 768-dimensional space.
-2. RMSNorm: Pre-normalization applied before the main block for stable gradient flow.
-3. Causal Conv1D: Extracts local context across sequence tokens.
-4. Selective SSM: The core recurrent block utilizing input-dependent selection parameters to learn what to remember and what to forget.
-5. Gated Output Projection: Uses a SiLU activation to gate the recurrent output back into the primary residual stream.
+```
+Input → RMSNorm → [In-Proj → Split(x, z)]
+                       ↓           ↓
+                  Conv1D(x)     SiLU(z)
+                       ↓           ↓
+                  SiLU(x)          │
+                       ↓           │
+              Selective SSM(x)     │
+                       ↓           │
+                    x * z ←────────┘
+                       ↓
+                   Out-Proj → + Residual → Output
+```
+
+### Core Components
+
+- **Selective Scan (SSM Core):** Input-dependent recurrence `h_t = Ā·h_{t-1} + B̄·x_t` with Zero-Order Hold discretization. The step size Δ is a learned function of the input, enabling adaptive temporal resolution.
+- **RMSNorm:** Pre-normalization for stable gradient flow (more efficient than LayerNorm).
+- **Causal Conv1D:** Depthwise convolution (k=4) for local context mixing before the SSM.
+- **Gated Output:** SiLU-gated projection that controls information flow from the SSM back into the residual stream.
+
+### Training Optimizations
+
+- **Residual Scaling:** All residual connections scaled by `1/√n_layers` (GPT-3/PaLM technique) for stable 24-layer training.
+- **Scaled Initialization:** Output projections initialized with `std / √(2·n_layers)` (GPT-2/3 technique) to prevent gradient explosion at depth.
+- **Gradient Checkpointing:** Trades compute for ~60% VRAM savings, enabling 1024-token sequences on free-tier T4 GPUs.
+- **Cosine LR Schedule:** With linear warmup and minimum LR floor for optimal convergence.
+- **Graceful Shutdown:** SIGTERM handler catches Kaggle/cloud timeout signals and saves a final checkpoint before process termination.
 
 ## Repository Structure
 
-The repository is divided into two main environments: the machine learning backend and the frontend client.
+### `/ml` — Machine Learning Engine
 
-### /ml (Machine Learning Engine)
-Contains the core PyTorch model, dataset processing, and training routines.
-* pebble/: The Python package containing the model architecture, configuration, and custom tokenizer.
-* prepare_data.py: Downloads and tokenizes the training corpus, saving it in chunked binary formats for high-speed disk reads.
-* train.py: The main training loop featuring Automatic Mixed Precision (AMP), gradient accumulation, and learning rate scheduling.
-* kaggle_train.py: An orchestrated script designed to run the entire pipeline end-to-end on cloud environments like Kaggle.
-* export_onnx.py: Converts the trained .pt PyTorch weights into ONNX format for web deployment.
+| File | Purpose |
+|---|---|
+| `pebble/model.py` | Complete Mamba-2 architecture (SSM, Conv1D, RMSNorm, gated output) |
+| `pebble/config.py` | Architecture hyperparameters as a typed dataclass |
+| `pebble/tokenizer.py` | Custom BPE tokenizer (32k vocab, byte-level) |
+| `pebble/dataset.py` | Memory-mapped binary dataset with numpy memmap |
+| `pebble/utils.py` | Checkpointing, diagnostics, and training utilities |
+| `kaggle_train.py` | End-to-end cloud training pipeline (Kaggle/Colab) |
+| `train.py` | Local training with WandB integration |
+| `generate.py` | Autoregressive generation (top-k, top-p, temperature, repetition penalty) |
+| `benchmark.py` | Evaluation suite (WikiText perplexity, LAMBADA, HellaSwag) |
+| `export_onnx.py` | PyTorch → ONNX conversion for web deployment |
 
-### /web (Frontend & WebGPU Inference)
-A Next.js application that serves as the landing page and inference engine.
-* Built with Next.js App Router and TypeScript.
-* Uses Framer Motion for UI interactions and transitions.
-* Implements ONNX Runtime Web to execute the model locally on the user's GPU.
-* The frontend uses a highly deliberate, minimalist Swiss-editorial design system built with vanilla CSS.
+### `/web` — Frontend & WebGPU Inference
+
+- **Next.js** App Router with TypeScript
+- **Framer Motion** for fluid animations and transitions
+- **ONNX Runtime Web** for browser-native model inference via WebGPU
+- **Swiss editorial design system** — vanilla CSS, no framework dependencies
 
 ## Getting Started
 
-### Training the Model
-To train the model from scratch, navigate to the `ml` directory. Ensure you have PyTorch installed with CUDA support.
+### Training
 
 ```bash
 cd ml
 pip install -r requirements.txt
-python prepare_data.py
-python train.py
-```
 
-For cloud training (e.g., Kaggle or Google Colab), simply upload the `ml` directory and run:
-```bash
+# Local training
+python prepare_data.py
+python train.py --data_path data/train.bin --val_data_path data/val.bin
+
+# Cloud training (Kaggle/Colab)
 python kaggle_train.py
 ```
 
-### Running the Web Interface
-To run the frontend and the interactive model playground locally:
+### Web Interface
 
 ```bash
 cd web
 bun install
 bun run dev
 ```
-The interface will be available at http://localhost:3000.
+
+The interface will be available at `http://localhost:3000`.
+
+### ONNX Export
+
+```bash
+python export_onnx.py --checkpoint checkpoints/checkpoint_latest.pt --output pebble.onnx
+```
+
+## Why Mamba Over Transformers?
+
+| Property | Transformer | Pebble (Mamba-2) |
+|---|---|---|
+| **Attention** | O(n²) quadratic | O(n) linear recurrence |
+| **Memory** | Grows with sequence | Constant (fixed state) |
+| **Context** | Fixed window (2k–8k) | Theoretically infinite |
+| **Generation** | KV-cache dependent | Native recurrent mode |
+| **Hardware** | Requires server GPU | Runs in your browser |
 
 ## License
-MIT License
+
+MIT
