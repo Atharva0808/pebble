@@ -266,17 +266,23 @@ class MambaBlock(nn.Module):
 
 
 class ResidualBlock(nn.Module):
-    """Pre-norm residual block: Norm → Mamba → Add."""
+    """Pre-norm residual block: Norm → Mamba → Add.
 
-    def __init__(self, config: PebbleConfig):
+    Uses residual scaling (1/√n_layers) for stable training at depth,
+    following GPT-3 and PaLM methodology.
+    """
+
+    def __init__(self, config: PebbleConfig, layer_idx: int = 0):
         super().__init__()
         self.norm = RMSNorm(config.d_model, eps=config.rms_norm_eps)
         self.mamba = MambaBlock(config)
+        # Scale residuals by 1/√n_layers for stable deep training
+        self.residual_scale = 1.0 / math.sqrt(config.n_layers)
 
     def forward(
         self, x: torch.Tensor, cache: Optional[dict] = None
     ) -> torch.Tensor:
-        return x + self.mamba(self.norm(x), cache=cache)
+        return x + self.residual_scale * self.mamba(self.norm(x), cache=cache)
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -285,17 +291,30 @@ class ResidualBlock(nn.Module):
 
 
 class PebbleModel(nn.Module):
-    """The Pebble backbone: Embedding → N × ResidualBlock → FinalNorm."""
+    """The Pebble backbone: Embedding → N × ResidualBlock → FinalNorm.
+
+    Supports gradient checkpointing for memory-efficient training
+    on resource-constrained hardware (Kaggle T4, etc.).
+    """
 
     def __init__(self, config: PebbleConfig):
         super().__init__()
         self.config = config
+        self.gradient_checkpointing = False
         self.embedding = nn.Embedding(config.vocab_size, config.d_model)
         self.layers = nn.ModuleList(
-            [ResidualBlock(config) for _ in range(config.n_layers)]
+            [ResidualBlock(config, layer_idx=i) for i in range(config.n_layers)]
         )
         self.norm_f = RMSNorm(config.d_model, eps=config.rms_norm_eps)
         self.drop = nn.Dropout(config.dropout) if config.dropout > 0 else nn.Identity()
+
+    def enable_gradient_checkpointing(self):
+        """Enable gradient checkpointing: trades compute for ~60% memory savings."""
+        self.gradient_checkpointing = True
+
+    def disable_gradient_checkpointing(self):
+        """Disable gradient checkpointing for inference."""
+        self.gradient_checkpointing = False
 
     def forward(
         self,
@@ -315,7 +334,12 @@ class PebbleModel(nn.Module):
 
         for i, layer in enumerate(self.layers):
             layer_cache = cache[i] if cache is not None else None
-            x = layer(x, cache=layer_cache)
+            if self.gradient_checkpointing and self.training and cache is None:
+                x = torch.utils.checkpoint.checkpoint(
+                    layer, x, layer_cache, use_reentrant=False
+                )
+            else:
+                x = layer(x, cache=layer_cache)
 
         x = self.norm_f(x)
         return x

@@ -62,11 +62,11 @@ CHECKPOINT_DIR = f"{OUTPUT_DIR}/checkpoints"
 # Training hyperparameters
 BATCH_SIZE = 2
 GRAD_ACCUM_STEPS = 16
-SEQ_LEN = 512
+SEQ_LEN = 1024
 MAX_STEPS = 30000
 LR = 3e-4
 MIN_LR = 3e-5
-WARMUP_STEPS = 1000
+WARMUP_STEPS = 150
 WEIGHT_DECAY = 0.1
 MAX_GRAD_NORM = 1.0
 DTYPE = "float16"
@@ -85,6 +85,20 @@ os.makedirs(CHECKPOINT_DIR, exist_ok=True)
 print_system_info()
 
 device = get_device()
+
+# ── Graceful Shutdown Handler ──────────────────────────────────────────────
+# Kaggle sends SIGTERM before killing the process. Catch it to save a final
+# checkpoint so we never lose training progress.
+import signal
+
+_graceful_shutdown = False
+
+def _handle_sigterm(signum, frame):
+    global _graceful_shutdown
+    print("\n  [SIGTERM] Kaggle shutdown signal received. Saving final checkpoint...")
+    _graceful_shutdown = True
+
+signal.signal(signal.SIGTERM, _handle_sigterm)
 
 # ── Step 2: Download & Prepare Data ────────────────────────────────────────
 print("\n" + "=" * 60)
@@ -186,6 +200,10 @@ model = PebbleLMHeadModel(config).to(device)
 param_info = count_parameters(model)
 print(f"  Parameters: {param_info['total_millions']}M")
 
+# Enable gradient checkpointing: ~60% VRAM reduction, allows longer sequences
+model.backbone.enable_gradient_checkpointing()
+print("  Gradient checkpointing: ENABLED")
+
 # ── Step 6: Training ──────────────────────────────────────────────────────
 print("\n" + "=" * 60)
 print("  Step 6: Training")
@@ -265,7 +283,7 @@ print(f"  Training chunks: {len(train_dataset):,}")
 print(f"  Max steps: {MAX_STEPS}")
 print()
 
-while step < MAX_STEPS:
+while step < MAX_STEPS and not _graceful_shutdown:
     try:
         batch = next(data_iter)
     except StopIteration:

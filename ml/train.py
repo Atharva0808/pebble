@@ -135,8 +135,10 @@ def train(args):
     )
 
     model = PebbleLMHeadModel(config).to(device)
+    model.backbone.enable_gradient_checkpointing()
     param_info = count_parameters(model)
     print(f"\n[Pebble] Model initialized: {param_info['total_millions']}M parameters")
+    print(f"[Pebble] Gradient checkpointing: ENABLED")
     print(f"[Pebble] Config: d_model={config.d_model}, n_layers={config.n_layers}, "
           f"d_inner={config.d_inner}, d_state={config.d_state}")
 
