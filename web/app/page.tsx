@@ -504,7 +504,7 @@ export default function Home() {
             </p>
           </div>
           <div className="footer-links">
-            <a href="https://github.com" target="_blank" rel="noopener" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <a href="https://github.com/Atharva0808/pebble" target="_blank" rel="noopener" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
