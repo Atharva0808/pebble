@@ -165,6 +165,8 @@ class MambaBlock(nn.Module):
 
         # ── Output Projection ─────────────────────────────────────────
         self.out_proj = nn.Linear(d_inner, d_model, bias=config.bias)
+        # Flag for scaled initialization (GPT-2/3 technique)
+        self.out_proj._is_residual = True
 
         # Initialize dt bias for proper step-size range [0.001, 0.1]
         self._init_dt_bias()
@@ -368,9 +370,17 @@ class PebbleLMHeadModel(nn.Module):
             layer.mamba._init_dt_bias()
 
     def _init_weights(self, module: nn.Module):
-        """Initialize weights with scaled normal distribution."""
+        """Initialize weights with scaled normal distribution.
+
+        Output projections that feed into residual connections use
+        scaled initialization (1/√(2·n_layers)) following GPT-2/3.
+        """
         if isinstance(module, nn.Linear):
-            nn.init.normal_(module.weight, mean=0.0, std=self.config.initializer_range)
+            std = self.config.initializer_range
+            # Scale residual-contributing projections (GPT-2/3 technique)
+            if hasattr(module, '_is_residual') and module._is_residual:
+                std *= (2 * self.config.n_layers) ** -0.5
+            nn.init.normal_(module.weight, mean=0.0, std=std)
             if module.bias is not None:
                 nn.init.zeros_(module.bias)
         elif isinstance(module, nn.Embedding):

@@ -40,7 +40,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from torch.cuda.amp import GradScaler, autocast
 
 # Add parent dir to path for pebble package
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -175,6 +174,12 @@ train_tokenizer(
 
 tokenizer = PebbleTokenizer(tokenizer_path)
 
+# Immediately copy tokenizer to output dir so it survives Kaggle kills
+import shutil
+shutil.copy2(tokenizer_path, f"{OUTPUT_DIR}/tokenizer.json")
+shutil.copy2(tokenizer_path, f"{CHECKPOINT_DIR}/tokenizer.json")
+print(f"  Tokenizer backed up to {OUTPUT_DIR}/")
+
 # ── Step 4: Pre-tokenize ──────────────────────────────────────────────────
 print("\n" + "=" * 60)
 print("  Step 4: Pre-tokenizing to Binary")
@@ -194,6 +199,7 @@ print("=" * 60)
 config = PebbleConfig(
     vocab_size=tokenizer.vocab_size,
     max_seq_len=SEQ_LEN,
+    dropout=0.05,  # Mild regularization for small-data training
 )
 model = PebbleLMHeadModel(config).to(device)
 
@@ -233,11 +239,11 @@ optimizer = torch.optim.AdamW(
     lr=LR, betas=(0.9, 0.95),
 )
 
-# Mixed precision
+# Mixed precision (modern PyTorch API)
 use_amp = DTYPE != "float32" and device.type == "cuda"
 pt_dtype = torch.float16 if DTYPE == "float16" else torch.bfloat16
 dtype_ctx = torch.autocast(device.type, dtype=pt_dtype) if use_amp else torch.autocast(device.type, enabled=False)
-scaler = GradScaler(enabled=(DTYPE == "float16"))
+scaler = torch.amp.GradScaler(device.type, enabled=(DTYPE == "float16"))
 
 
 def get_lr(step):
@@ -352,7 +358,6 @@ print("\n" + "=" * 60)
 print("  Step 7: Saving Artifacts")
 print("=" * 60)
 
-import shutil
 shutil.copy2(tokenizer_path, f"{OUTPUT_DIR}/tokenizer.json")
 print(f"  Tokenizer → {OUTPUT_DIR}/tokenizer.json")
 print(f"  Checkpoints → {CHECKPOINT_DIR}/")

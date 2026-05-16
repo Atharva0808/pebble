@@ -23,7 +23,6 @@ import time
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from torch.cuda.amp import GradScaler, autocast
 
 from pebble.config import PebbleConfig
 from pebble.model import PebbleLMHeadModel
@@ -194,7 +193,7 @@ def train(args):
         "float32": torch.float32,
     }[args.dtype]
     dtype_ctx = torch.autocast(device.type, dtype=pt_dtype) if use_amp else torch.autocast(device.type, enabled=False)
-    scaler = GradScaler(enabled=(args.dtype == "float16"))
+    scaler = torch.amp.GradScaler(device.type, enabled=(args.dtype == "float16"))
 
     # ── Resume from Checkpoint ─────────────────────────────────────────
     start_step = 0
