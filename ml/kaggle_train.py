@@ -183,14 +183,6 @@ config = PebbleConfig(
 )
 model = PebbleLMHeadModel(config).to(device)
 
-# Enable torch.compile for 2x-3x speedup on Kaggle (Linux)
-if hasattr(torch, "compile") and sys.platform != "win32":
-    print("  [System] Compiling model for speed (Selective Scan optimization)...")
-    try:
-        model = torch.compile(model)
-    except Exception as e:
-        print(f"  [Warning] torch.compile failed: {e}. Falling back to eager mode.")
-
 param_info = count_parameters(model)
 print(f"  Parameters: {param_info['total_millions']}M")
 
