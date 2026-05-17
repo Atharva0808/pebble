@@ -58,6 +58,24 @@ OUTPUT_DIR = "/kaggle/working/pebble_output"
 DATA_DIR = "/kaggle/working/pebble_data"
 CHECKPOINT_DIR = f"{OUTPUT_DIR}/checkpoints"
 
+# ── Check for previous checkpoint (multi-session resumption) ──────────────
+# Upload your previous run's checkpoint_latest.pt and tokenizer.json
+# as a Kaggle Dataset. The script will auto-detect and resume.
+RESUME_CHECKPOINT = None
+RESUME_TOKENIZER = None
+
+for input_dir in Path("/kaggle/input").glob("*"):
+    ckpt_path = input_dir / "checkpoint_latest.pt"
+    tok_path = input_dir / "tokenizer.json"
+    if ckpt_path.exists():
+        RESUME_CHECKPOINT = str(ckpt_path)
+        if tok_path.exists():
+            RESUME_TOKENIZER = str(tok_path)
+        print(f"  [RESUME] Found checkpoint: {RESUME_CHECKPOINT}")
+        if RESUME_TOKENIZER:
+            print(f"  [RESUME] Found tokenizer: {RESUME_TOKENIZER}")
+        break
+
 # Training hyperparameters
 BATCH_SIZE = 2
 GRAD_ACCUM_STEPS = 16
@@ -160,17 +178,25 @@ with open(val_txt, "w", encoding="utf-8") as f:
 print(f"  Train: {split_idx:,} samples")
 print(f"  Val:   {len(all_texts) - split_idx:,} samples")
 
-# ── Step 3: Train Tokenizer ───────────────────────────────────────────────
+# ── Step 3: Train or Reuse Tokenizer ──────────────────────────────────────
 print("\n" + "=" * 60)
-print("  Step 3: Training BPE Tokenizer")
+print("  Step 3: Tokenizer")
 print("=" * 60)
 
 tokenizer_path = f"{DATA_DIR}/tokenizer.json"
-train_tokenizer(
-    data_files=[train_txt],
-    vocab_size=VOCAB_SIZE,
-    save_path=tokenizer_path,
-)
+
+if RESUME_TOKENIZER:
+    # Reuse tokenizer from previous run (MUST be the same tokenizer)
+    import shutil
+    shutil.copy2(RESUME_TOKENIZER, tokenizer_path)
+    print(f"  Reusing tokenizer from previous run")
+else:
+    train_tokenizer(
+        data_files=[train_txt],
+        vocab_size=VOCAB_SIZE,
+        save_path=tokenizer_path,
+    )
+    print(f"  Trained new tokenizer")
 
 tokenizer = PebbleTokenizer(tokenizer_path)
 
@@ -283,6 +309,18 @@ t_start = time.time()
 running_loss = 0.0
 best_val_loss = float("inf")
 data_iter = iter(train_loader)
+
+# ── Resume from checkpoint if available ────────────────────────────────
+if RESUME_CHECKPOINT:
+    print(f"\n  [RESUME] Loading checkpoint: {RESUME_CHECKPOINT}")
+    ckpt = torch.load(RESUME_CHECKPOINT, map_location=device, weights_only=False)
+    model.load_state_dict(ckpt["model_state_dict"])
+    optimizer.load_state_dict(ckpt["optimizer_state_dict"])
+    step = ckpt.get("step", 0)
+    best_val_loss = ckpt.get("best_val_loss", float("inf"))
+    print(f"  [RESUME] Resuming from step {step}")
+    print(f"  [RESUME] Previous best val_loss: {best_val_loss:.4f}")
+    del ckpt  # Free memory
 
 print(f"  Effective batch: {BATCH_SIZE * GRAD_ACCUM_STEPS}")
 print(f"  Training chunks: {len(train_dataset):,}")
