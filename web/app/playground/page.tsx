@@ -150,96 +150,65 @@ export default function PlaygroundPage() {
             variants={fadeUp}
             style={{ marginTop: "var(--space-md)" }}
           >
-            Talk to Pebble.
+            Explore the architecture.
           </motion.h2>
           <motion.p
             custom={2}
             variants={fadeUp}
             style={{ marginTop: "var(--space-md)" }}
           >
-            This demo simulates Pebble&apos;s generation behavior. When the
-            trained ONNX model is loaded, inference will run entirely in your
-            browser via WebGPU — no server, no API calls, zero latency.
+            Select a topic below to see Pebble respond. Each answer is generated
+            token-by-token to simulate real inference behavior. The full model
+            will run entirely in your browser via WebGPU.
           </motion.p>
 
+          {/* ── Prompt Buttons (Primary) ────────────────────────── */}
           <motion.div
             custom={3}
             variants={fadeUp}
             style={{ marginTop: "var(--space-3xl)" }}
           >
-            {/* ── Controls ──────────────────────────────────────── */}
-            <div className="playground-controls">
-              <div className="control-group">
-                <label className="control-label">Temperature</label>
-                <div className="control-row">
-                  <input
-                    type="range"
-                    min="0.1"
-                    max="1.5"
-                    step="0.1"
-                    value={temperature}
-                    onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                    className="control-slider"
-                  />
-                  <span className="control-value">{temperature.toFixed(1)}</span>
-                </div>
-              </div>
-              <div className="control-group">
-                <label className="control-label">Max Tokens</label>
-                <div className="control-row">
-                  <input
-                    type="range"
-                    min="32"
-                    max="512"
-                    step="32"
-                    value={maxTokens}
-                    onChange={(e) => setMaxTokens(parseInt(e.target.value))}
-                    className="control-slider"
-                  />
-                  <span className="control-value">{maxTokens}</span>
-                </div>
-              </div>
+            <span className="label">Select a Prompt</span>
+            <div className="suggestions" style={{ marginTop: "var(--space-md)" }}>
+              {[
+                "Hi, who are you?",
+                "What is a state space model?",
+                "How does Pebble train on free GPUs?",
+                "Why is Mamba faster than a Transformer?",
+                "Explain the architecture in simple terms",
+                "Show me the code for selective scan",
+                "Tell me about this project",
+              ].map((s) => (
+                <button
+                  key={s}
+                  className="suggestion-chip"
+                  onClick={() => {
+                    setPrompt(s);
+                    // Auto-trigger generation
+                    setTimeout(() => {
+                      const btn = document.querySelector(".btn-generate") as HTMLButtonElement;
+                      if (btn && !btn.disabled) btn.click();
+                    }, 50);
+                  }}
+                >
+                  {s}
+                </button>
+              ))}
             </div>
+          </motion.div>
 
-            {/* ── Input ─────────────────────────────────────────── */}
-            <div className="playground-input-wrapper">
-              <textarea
-                className="playground-input"
-                placeholder="Enter a prompt... (try: What is a state space model?)"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleGenerate();
-                  }
-                }}
-                rows={3}
-              />
-              <div className="playground-actions">
-                {isGenerating ? (
-                  <button className="btn-stop" onClick={handleStop}>
-                    Stop
-                  </button>
-                ) : (
-                  <button
-                    className="btn-generate"
-                    onClick={handleGenerate}
-                    disabled={!prompt.trim()}
-                  >
-                    Generate
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* ── Output ────────────────────────────────────────── */}
+          {/* ── Output ────────────────────────────────────────── */}
+          <motion.div
+            custom={4}
+            variants={fadeUp}
+            style={{ marginTop: "var(--space-3xl)" }}
+          >
             <div className="playground-output" ref={outputRef}>
               {output ? (
                 <p className="output-text">{output}</p>
               ) : (
                 <p className="output-placeholder">
-                  Generation will appear here...
+                  ← Select a prompt above to see Pebble respond
                 </p>
               )}
             </div>
@@ -267,30 +236,42 @@ export default function PlaygroundPage() {
             </div>
           </motion.div>
 
-          {/* ── Suggested Prompts ──────────────────────────────── */}
+          {/* ── Custom Input (Secondary) ──────────────────────── */}
           <motion.div
-            custom={4}
+            custom={5}
             variants={fadeUp}
             style={{ marginTop: "var(--space-3xl)" }}
           >
-            <span className="label">Try These</span>
-            <div className="suggestions">
-              {[
-                "What is a state space model?",
-                "How does Pebble train on free GPUs?",
-                "Why is Mamba faster than a Transformer?",
-                "Show me the code for selective scan",
-              ].map((s) => (
-                <button
-                  key={s}
-                  className="suggestion-chip"
-                  onClick={() => {
-                    setPrompt(s);
-                  }}
-                >
-                  {s}
-                </button>
-              ))}
+            <span className="label">Or type your own</span>
+            <div className="playground-input-wrapper" style={{ marginTop: "var(--space-md)" }}>
+              <textarea
+                className="playground-input"
+                placeholder="Ask about the architecture, training, or how Pebble works..."
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleGenerate();
+                  }
+                }}
+                rows={2}
+              />
+              <div className="playground-actions">
+                {isGenerating ? (
+                  <button className="btn-stop" onClick={handleStop}>
+                    Stop
+                  </button>
+                ) : (
+                  <button
+                    className="btn-generate"
+                    onClick={handleGenerate}
+                    disabled={!prompt.trim()}
+                  >
+                    Generate
+                  </button>
+                )}
+              </div>
             </div>
           </motion.div>
         </motion.div>
