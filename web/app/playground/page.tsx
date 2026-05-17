@@ -26,7 +26,7 @@ const stagger = {
 // ── Simulated generation for demo mode (before ONNX model is loaded) ──
 const DEMO_RESPONSES: Record<string, string> = {
   default:
-    "I'm Pebble — a 120M parameter language model built on the Mamba-2 Selective State Space architecture. I process text in linear time using a compressed hidden state instead of attention, which means I can handle arbitrarily long contexts without slowing down. I was trained from scratch on a blend of encyclopedic and narrative text. Ask me about my architecture, how I was trained, or why I'm different from a Transformer.",
+    "I'm running in demo mode right now — my full model is a 120M parameter Mamba-2 SSM trained from scratch. In this mode, I can answer questions about my architecture, how I was trained, and why I'm different from Transformers. Try one of the suggested prompts below, or ask me something like 'what is a state space model?' or 'how does Pebble train?'",
   hi:
     "Hello! I'm Pebble, a small language model built from scratch. I don't use attention like GPT or Llama — instead, I process text through a selective state space recurrence that runs in linear time. Ask me anything about how I work, or try one of the suggested prompts below.",
   hello:
