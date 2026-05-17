@@ -73,6 +73,7 @@ def export_to_onnx(
         },
         opset_version=opset_version,
         do_constant_folding=True,
+        dynamo=False,  # Use legacy exporter (handles sequential scan loops)
     )
 
     # Verify
