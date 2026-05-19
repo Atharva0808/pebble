@@ -64,17 +64,45 @@ CHECKPOINT_DIR = f"{OUTPUT_DIR}/checkpoints"
 RESUME_CHECKPOINT = None
 RESUME_TOKENIZER = None
 
-for input_dir in Path("/kaggle/input").glob("*"):
-    ckpt_path = input_dir / "checkpoint_latest.pt"
-    tok_path = input_dir / "tokenizer.json"
-    if ckpt_path.exists():
-        RESUME_CHECKPOINT = str(ckpt_path)
-        if tok_path.exists():
-            RESUME_TOKENIZER = str(tok_path)
-        print(f"  [RESUME] Found checkpoint: {RESUME_CHECKPOINT}")
-        if RESUME_TOKENIZER:
-            print(f"  [RESUME] Found tokenizer: {RESUME_TOKENIZER}")
-        break
+# DEBUG: Print everything in /kaggle/input/ so we can see what Kaggle gives us
+input_root = Path("/kaggle/input")
+print("\n" + "=" * 60)
+print("  DEBUG: Scanning /kaggle/input/ for checkpoints")
+print("=" * 60)
+if input_root.exists():
+    all_items = list(input_root.rglob("*"))
+    if all_items:
+        for item in all_items[:50]:  # Print up to 50 items
+            marker = "[FILE]" if item.is_file() else "[DIR] "
+            size = f" ({item.stat().st_size / 1e6:.1f} MB)" if item.is_file() else ""
+            print(f"  {marker} {item}{size}")
+    else:
+        print("  (empty - no datasets attached to this notebook)")
+else:
+    print("  /kaggle/input/ does not exist")
+
+# Search recursively for checkpoint file (handles any nesting depth)
+for ckpt_path in input_root.rglob("checkpoint_latest.pt"):
+    RESUME_CHECKPOINT = str(ckpt_path)
+    # Look for tokenizer in the same directory
+    tok_path = ckpt_path.parent / "tokenizer.json"
+    if tok_path.exists():
+        RESUME_TOKENIZER = str(tok_path)
+    else:
+        # Also search recursively for tokenizer
+        for tok in input_root.rglob("tokenizer.json"):
+            RESUME_TOKENIZER = str(tok)
+            break
+    break
+
+if RESUME_CHECKPOINT:
+    print(f"\n  ✓ [RESUME] Found checkpoint: {RESUME_CHECKPOINT}")
+    if RESUME_TOKENIZER:
+        print(f"  ✓ [RESUME] Found tokenizer: {RESUME_TOKENIZER}")
+else:
+    print(f"\n  ✗ No checkpoint found. Training from scratch.")
+    print(f"    To resume: upload checkpoint_latest.pt as a Kaggle Dataset")
+    print(f"    and add it as Input to this notebook.")
 
 # Training hyperparameters
 BATCH_SIZE = 2
