@@ -116,6 +116,13 @@ python export_onnx.py --checkpoint checkpoints/checkpoint_latest.pt --output peb
 | **Generation** | KV-cache dependent | Native recurrent mode |
 | **Hardware** | Requires server GPU | Runs in your browser |
 
+## Training Progress (Step 1500)
+
+*Note on current weights: Due to Kaggle GPU compute limits and hardware-induced gradient explosions at small batch sizes, active training was halted at Step 1500 (Loss: 7.1). At this stage, the model successfully learned tokenization, character recognition, and basic narrative structure (e.g., character names and dialogue formatting), though it lacks conversational fluency. The primary goal of this project was to validate the custom Mamba-2 architecture and the fault-tolerant cloud training pipeline, both of which operated flawlessly prior to hardware exhaustion.*
+
+**Raw Output Example (Prompt: "Hello, my name is"):**
+> *"Hello, my name is it a and. mom. saw the there to the of and. felt! had. said so little's big day Lily. was play She to with and smiled she happy want you,," he"!" her, was and it so and!'m went He a. and a.. you,?" Ben we go a,. little. dog it her, was big and you She Lily,, have fun his on are. was you. do you I his. was wanted the, was, said ",. had it you some..."*
+
 ## License
 
 MIT
