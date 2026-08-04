@@ -141,7 +141,6 @@ export default function PlaygroundPage() {
           initial="hidden"
           animate="visible"
           variants={stagger}
-          style={{ maxWidth: "880px" }}
         >
           {/* ── Left-Aligned Header ────────────────────────────────────────── */}
           <div style={{ textAlign: "left", marginBottom: "var(--space-xl)" }}>
