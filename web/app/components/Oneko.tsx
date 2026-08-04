@@ -23,19 +23,19 @@ export default function Oneko() {
     let idleTime = 0;
     let idleAnimation: string | null = null;
     let idleAnimationFrame = 0;
-    const nekoSpeed = 10;
+    const nekoSpeed = 24;
 
     const spriteSets: Record<string, number[][]> = {
       idle: [[-3, -3]],
       alert: [[-7, -3]],
       scratchSelf: [
-        [-5, -4],
-        [-6, -4],
-        [-7, -4],
+        [-5, 0],
+        [-6, 0],
+        [-7, 0],
       ],
       scratchWallN: [
-        [0, -2],
-        [0, -3],
+        [0, 0],
+        [0, -1],
       ],
       scratchWallS: [
         [-4, -3],
@@ -59,32 +59,32 @@ export default function Oneko() {
         [-1, -3],
       ],
       NE: [
-        [0, -4],
-        [0, -5],
+        [0, -2],
+        [0, -3],
       ],
       E: [
-        [-2, -4],
-        [-2, -5],
+        [-3, 0],
+        [-3, -1],
       ],
       SE: [
-        [-1, -4],
-        [-1, -5],
+        [-5, -1],
+        [-5, -2],
       ],
       S: [
-        [-6, -2],
         [-6, -3],
+        [-7, -2],
       ],
       SW: [
-        [-5, -2],
         [-5, -3],
+        [-6, -1],
       ],
       W: [
-        [-3, -4],
-        [-3, -5],
+        [-4, -2],
+        [-4, -3],
       ],
       NW: [
-        [-1, -1],
         [-1, 0],
+        [-1, -1],
       ],
     };
 
@@ -143,7 +143,7 @@ export default function Oneko() {
       const diffY = nekoPosY - mousePosY;
       const distance = Math.sqrt(diffX ** 2 + diffY ** 2);
 
-      if (distance < nekoSpeed || distance < 48) {
+      if (distance < nekoSpeed || distance < 24) {
         idle();
         return;
       }
@@ -191,7 +191,7 @@ export default function Oneko() {
     document.body.appendChild(nekoEl);
 
     document.addEventListener("mousemove", onMouseMove);
-    const interval = setInterval(update, 100);
+    const interval = setInterval(update, 33);
 
     return () => {
       document.removeEventListener("mousemove", onMouseMove);
