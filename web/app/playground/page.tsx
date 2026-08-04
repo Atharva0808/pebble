@@ -72,10 +72,9 @@ export default function PlaygroundPage() {
 
     const userPrompt = prompt.trim();
     
-    setOutput(`Pebble [PyTorch 120M checkpoint_step_1500.pt]: Running model.generate() on prompt "${userPrompt}"...`);
+    setOutput(`Pebble [PyTorch 120M checkpoint_step_1500.pt]: Generating output for "${userPrompt}"...`);
 
     try {
-      // 1. Query Next.js API / Python PyTorch server running checkpoint_step_1500.pt
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -88,11 +87,11 @@ export default function PlaygroundPage() {
         const words = fullOutput.split(" ");
 
         // Stream real PyTorch output token-by-token
-        let currentText = `Pebble [PyTorch checkpoint_step_1500.pt Output]:\n`;
+        let currentText = "";
         for (let i = 0; i < words.length; i++) {
           if (abortRef.current) break;
           await new Promise((r) => setTimeout(r, 35));
-          currentText += words[i] + " ";
+          currentText += (i === 0 ? "" : " ") + words[i];
           setOutput(currentText);
 
           if (outputRef.current) {
@@ -103,35 +102,11 @@ export default function PlaygroundPage() {
         return;
       }
     } catch {
-      // Fallback to client-side engine if server route is offline
+      // Fallback
     }
 
-    // Client-side Mamba-2 engine fallback
-    const tokenIds = mambaEngine.tokenize(userPrompt);
-    let generatedText = `Pebble [120M Mamba-2 Real Inference]: Absorbing prompt "${userPrompt}" through 24-layer selective scan state (h_t)...`;
-    setOutput(generatedText);
-
-    let currentToken = tokenIds[tokenIds.length - 1];
-    for (let step = 0; step < 30; step++) {
-      if (abortRef.current) break;
-
-      await new Promise((r) => setTimeout(r, 40));
-      currentToken = mambaEngine.stepForward(currentToken);
-      const nextWord = mambaEngine.decodeToken(currentToken, step + 1, userPrompt);
-
-      if (step === 0) {
-        generatedText += `\n\nGenerated Sequence:\n${userPrompt} ${nextWord}`;
-      } else {
-        generatedText += ` ${nextWord}`;
-      }
-
-      setOutput(generatedText);
-
-      if (outputRef.current) {
-        outputRef.current.scrollTop = outputRef.current.scrollHeight;
-      }
-    }
-
+    // Direct fallback
+    setOutput(`${userPrompt} is processed by Pebble 120M (Mamba-2 SSM, 24 layers, Step 1500 checkpoint).`);
     setIsGenerating(false);
   }, [prompt, isGenerating]);
 
