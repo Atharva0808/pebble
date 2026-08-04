@@ -23,7 +23,7 @@ export default function Oneko() {
     let idleTime = 0;
     let idleAnimation: string | null = null;
     let idleAnimationFrame = 0;
-    const nekoSpeed = 24;
+    const nekoSpeed = 18;
 
     const spriteSets: Record<string, number[][]> = {
       idle: [[-3, -3]],
@@ -109,7 +109,7 @@ export default function Oneko() {
         const availableIdleAnimations = ["sleeping", "scratchSelf"];
         idleAnimation =
           availableIdleAnimations[
-            Math.floor(Math.random() * availableIdleAnimations.length)
+          Math.floor(Math.random() * availableIdleAnimations.length)
           ];
       }
 
