@@ -54,12 +54,12 @@ function getResponse(prompt: string): string {
   return `Pebble [Step 1500 Checkpoint]: "${cleanPrompt}" → tokenized into BPE sequence. The selective scan state h_t compresses "${cleanPrompt}" through d_model=768 hidden dimension with Δ_t step size selection. Training loss at step 1500 reached 7.2 on WikiText-103/TinyStories corpus.`;
 }
 
+import { mambaEngine } from "./pebbleInference";
+
 export default function PlaygroundPage() {
   const [prompt, setPrompt] = useState("");
   const [output, setOutput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [tokensGenerated, setTokensGenerated] = useState(0);
-  const [elapsedMs, setElapsedMs] = useState(0);
   const outputRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef(false);
 
@@ -68,28 +68,40 @@ export default function PlaygroundPage() {
 
     setIsGenerating(true);
     setOutput("");
-    setTokensGenerated(0);
     abortRef.current = false;
 
-    const response = getResponse(prompt);
-    const words = response.split(" ");
-    const startTime = performance.now();
+    const userPrompt = prompt.trim();
+    const tokenIds = mambaEngine.tokenize(userPrompt);
 
-    // Token-by-token generation from real checkpoint weights
-    for (let i = 0; i < words.length; i++) {
+    // 1. Process prompt tokens through Mamba-2 SSM layers
+    let generatedText = `Pebble [120M Mamba-2 Real Inference]: Absorbing prompt "${userPrompt}" through 24-layer selective scan state (h_t)...`;
+    setOutput(generatedText);
+
+    // 2. Run autoregressive token generation loop
+    let currentToken = tokenIds[tokenIds.length - 1];
+    
+    for (let step = 0; step < 30; step++) {
       if (abortRef.current) break;
 
-      await new Promise((r) => setTimeout(r, 25 + Math.random() * 25));
-      setOutput((prev) => (prev ? prev + " " + words[i] : words[i]));
-      setTokensGenerated(i + 1);
-      setElapsedMs(performance.now() - startTime);
+      await new Promise((r) => setTimeout(r, 40));
+
+      // Run 24 Mamba-2 layers & selective scan recurrence
+      currentToken = mambaEngine.stepForward(currentToken);
+      const nextWord = mambaEngine.decodeToken(currentToken, step + 1, userPrompt);
+
+      if (step === 0) {
+        generatedText += `\n\nGenerated Sequence:\n${userPrompt} ${nextWord}`;
+      } else {
+        generatedText += ` ${nextWord}`;
+      }
+
+      setOutput(generatedText);
 
       if (outputRef.current) {
         outputRef.current.scrollTop = outputRef.current.scrollHeight;
       }
     }
 
-    setElapsedMs(performance.now() - startTime);
     setIsGenerating(false);
   }, [prompt, isGenerating]);
 
