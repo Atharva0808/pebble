@@ -141,7 +141,7 @@ export default function PlaygroundPage() {
           initial="hidden"
           animate="visible"
           variants={stagger}
-          style={{ maxWidth: "860px", margin: "0 auto" }}
+          style={{ maxWidth: "1100px", margin: "0 auto" }}
         >
           {/* ── Header ────────────────────────────────────────── */}
           <div style={{ textAlign: "center", marginBottom: "var(--space-xl)" }}>
@@ -158,104 +158,130 @@ export default function PlaygroundPage() {
             <motion.p
               custom={2}
               variants={fadeUp}
-              style={{ marginTop: "var(--space-sm)", marginInline: "auto", fontSize: "0.9375rem" }}
+              style={{ marginTop: "var(--space-xs)", marginInline: "auto", fontSize: "0.9375rem" }}
             >
               Interactive demonstration of linear-time Mamba-2 token generation.
             </motion.p>
           </div>
 
-          {/* ── Minimal Studio Card ────────────────────────────── */}
+          {/* ── Side-by-Side Playground Grid Layout ────────────── */}
           <motion.div
             custom={3}
             variants={fadeUp}
-            className="playground-card"
+            className="playground-grid"
           >
-            {/* Quick Prompt Chips */}
-            <div className="suggestions" style={{ marginBottom: "var(--space-md)" }}>
-              {[
-                "Hi, who are you?",
-                "What is a state space model?",
-                "Why is Mamba faster than a Transformer?",
-                "Show me the code for selective scan",
-              ].map((s) => (
-                <button
-                  key={s}
-                  className="suggestion-chip"
-                  onClick={() => {
-                    setPrompt(s);
-                    setTimeout(() => {
-                      const btn = document.querySelector(".btn-generate") as HTMLButtonElement;
-                      if (btn && !btn.disabled) btn.click();
-                    }, 50);
-                  }}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-
-            {/* Input Textarea & Action Button */}
-            <div className="playground-input-wrapper">
-              <textarea
-                className="playground-input"
-                placeholder="Ask about the architecture, training, or select a quick prompt..."
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleGenerate();
-                  }
-                }}
-                rows={2}
-              />
-              <div className="playground-actions">
-                {isGenerating ? (
-                  <button className="btn-stop" onClick={handleStop}>
-                    Stop
-                  </button>
-                ) : (
-                  <button
-                    className="btn-generate"
-                    onClick={handleGenerate}
-                    disabled={!prompt.trim()}
-                  >
-                    Generate
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Response Output Box */}
-            <div className="playground-output" ref={outputRef}>
-              {output ? (
-                <p className="output-text">{output}</p>
-              ) : (
-                <p className="output-placeholder">
-                  Select a prompt above or type a question to see Pebble generate output token-by-token.
-                </p>
-              )}
-            </div>
-
-            {/* Integrated Metrics Footer */}
-            <div className="playground-stats">
-              <div className="stat-item">
-                <span className="stat-label">Tokens</span>
-                <span className="stat-value">{tokensGenerated}</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">Speed</span>
-                <span className="stat-value">{tokPerSec} tok/s</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">Elapsed</span>
-                <span className="stat-value">
-                  {(elapsedMs / 1000).toFixed(2)}s
+            {/* Left Column: Input & Quick Prompts */}
+            <div className="playground-col-left">
+              <div className="playground-card">
+                <span className="label" style={{ marginBottom: "var(--space-sm)", display: "block" }}>
+                  Prompt Input
                 </span>
+                <div className="playground-input-wrapper">
+                  <textarea
+                    className="playground-input"
+                    placeholder="Ask a question or select a prompt below..."
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleGenerate();
+                      }
+                    }}
+                    rows={4}
+                  />
+                  <div className="playground-actions">
+                    {isGenerating ? (
+                      <button className="btn-stop" onClick={handleStop}>
+                        Stop
+                      </button>
+                    ) : (
+                      <button
+                        className="btn-generate"
+                        onClick={handleGenerate}
+                        disabled={!prompt.trim()}
+                      >
+                        Generate
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Quick Prompts Strip */}
+                <div style={{ marginTop: "var(--space-lg)" }}>
+                  <span className="label" style={{ fontSize: "0.625rem", color: "var(--stone-400)", marginBottom: "var(--space-xs)", display: "block" }}>
+                    Quick Prompts
+                  </span>
+                  <div className="suggestions">
+                    {[
+                      "Hi, who are you?",
+                      "What is a state space model?",
+                      "Why is Mamba faster than a Transformer?",
+                      "How does Pebble train on free GPUs?",
+                      "Show me the code for selective scan",
+                    ].map((s) => (
+                      <button
+                        key={s}
+                        className="suggestion-chip"
+                        onClick={() => {
+                          setPrompt(s);
+                          setTimeout(() => {
+                            const btn = document.querySelector(".btn-generate") as HTMLButtonElement;
+                            if (btn && !btn.disabled) btn.click();
+                          }, 50);
+                        }}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="stat-item">
-                <span className="stat-label">Runtime</span>
-                <span className="stat-value">WebGPU (Demo)</span>
+            </div>
+
+            {/* Right Column: Response Output & Performance Metrics */}
+            <div className="playground-col-right">
+              <div className="playground-card" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-sm)" }}>
+                  <span className="label">Response Output</span>
+                  {isGenerating && (
+                    <span className="label" style={{ color: "var(--terracotta)", textTransform: "none" }}>
+                      Generating tokens...
+                    </span>
+                  )}
+                </div>
+
+                <div className="playground-output" ref={outputRef} style={{ flex: 1 }}>
+                  {output ? (
+                    <p className="output-text">{output}</p>
+                  ) : (
+                    <p className="output-placeholder">
+                      Select a quick prompt or type a custom question on the left to see Pebble generate output token-by-token.
+                    </p>
+                  )}
+                </div>
+
+                {/* Performance Metrics Bar */}
+                <div className="playground-stats">
+                  <div className="stat-item">
+                    <span className="stat-label">Tokens</span>
+                    <span className="stat-value">{tokensGenerated}</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">Speed</span>
+                    <span className="stat-value">{tokPerSec} tok/s</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">Elapsed</span>
+                    <span className="stat-value">
+                      {(elapsedMs / 1000).toFixed(2)}s
+                    </span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">Runtime</span>
+                    <span className="stat-value">WebGPU (Demo)</span>
+                  </div>
+                </div>
               </div>
             </div>
           </motion.div>

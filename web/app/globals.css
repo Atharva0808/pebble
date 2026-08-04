@@ -645,6 +645,13 @@ p {
 }
 
 /* ── Playground ─────────────────────────────────────────────────────────── */
+.playground-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-xl);
+  align-items: stretch;
+}
+
 .playground-card {
   background: var(--stone-50);
   border: 1px solid var(--stone-200);
@@ -810,7 +817,8 @@ p {
 @media (max-width: 900px) {
   .arch-grid,
   .code-section,
-  .comparison-grid {
+  .comparison-grid,
+  .playground-grid {
     grid-template-columns: 1fr;
   }
 
