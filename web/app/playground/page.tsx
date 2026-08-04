@@ -135,44 +135,70 @@ export default function PlaygroundPage() {
       {/* ── Playground ────────────────────────────────────────────── */}
       <section
         className="section container"
-        style={{ paddingTop: "calc(var(--nav-height) + var(--space-2xl))" }}
+        style={{ paddingTop: "calc(var(--nav-height) + var(--space-xl))" }}
       >
         <motion.div
           initial="hidden"
           animate="visible"
           variants={stagger}
+          style={{ maxWidth: "860px", margin: "0 auto" }}
         >
-          <motion.span className="label" custom={0} variants={fadeUp}>
-            Playground
-          </motion.span>
-          <motion.h2
-            custom={1}
-            variants={fadeUp}
-            style={{ marginTop: "var(--space-md)" }}
-          >
-            Explore the architecture.
-          </motion.h2>
-          <motion.p
-            custom={2}
-            variants={fadeUp}
-            style={{ marginTop: "var(--space-md)" }}
-          >
-            Select a topic below to see Pebble respond. Each answer is generated
-            token-by-token to simulate real inference behavior. The full model
-            will run entirely in your browser via WebGPU.
-          </motion.p>
+          {/* ── Header ────────────────────────────────────────── */}
+          <div style={{ textAlign: "center", marginBottom: "var(--space-xl)" }}>
+            <motion.span className="label" custom={0} variants={fadeUp}>
+              Playground
+            </motion.span>
+            <motion.h2
+              custom={1}
+              variants={fadeUp}
+              style={{ marginTop: "var(--space-xs)" }}
+            >
+              Experience Pebble.
+            </motion.h2>
+            <motion.p
+              custom={2}
+              variants={fadeUp}
+              style={{ marginTop: "var(--space-sm)", marginInline: "auto", fontSize: "0.9375rem" }}
+            >
+              Interactive demonstration of linear-time Mamba-2 token generation.
+            </motion.p>
+          </div>
 
-          {/* ── Input Panel (Prompt Textarea & Suggestion Chips) ── */}
+          {/* ── Minimal Studio Card ────────────────────────────── */}
           <motion.div
             custom={3}
             variants={fadeUp}
-            style={{ marginTop: "var(--space-2xl)" }}
+            className="playground-card"
           >
-            <span className="label">Prompt Input</span>
-            <div className="playground-input-wrapper" style={{ marginTop: "var(--space-sm)" }}>
+            {/* Quick Prompt Chips */}
+            <div className="suggestions" style={{ marginBottom: "var(--space-md)" }}>
+              {[
+                "Hi, who are you?",
+                "What is a state space model?",
+                "Why is Mamba faster than a Transformer?",
+                "Show me the code for selective scan",
+              ].map((s) => (
+                <button
+                  key={s}
+                  className="suggestion-chip"
+                  onClick={() => {
+                    setPrompt(s);
+                    setTimeout(() => {
+                      const btn = document.querySelector(".btn-generate") as HTMLButtonElement;
+                      if (btn && !btn.disabled) btn.click();
+                    }, 50);
+                  }}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+
+            {/* Input Textarea & Action Button */}
+            <div className="playground-input-wrapper">
               <textarea
                 className="playground-input"
-                placeholder="Ask about the architecture, training, or select a prompt below..."
+                placeholder="Ask about the architecture, training, or select a quick prompt..."
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyDown={(e) => {
@@ -181,7 +207,7 @@ export default function PlaygroundPage() {
                     handleGenerate();
                   }
                 }}
-                rows={3}
+                rows={2}
               />
               <div className="playground-actions">
                 {isGenerating ? (
@@ -200,65 +226,18 @@ export default function PlaygroundPage() {
               </div>
             </div>
 
-            {/* ── Suggested Quick Prompts ── */}
-            <div style={{ marginTop: "var(--space-md)" }}>
-              <span className="label" style={{ fontSize: "0.625rem", color: "var(--stone-400)" }}>
-                Quick Prompts
-              </span>
-              <div className="suggestions" style={{ marginTop: "var(--space-xs)" }}>
-                {[
-                  "Hi, who are you?",
-                  "What is a state space model?",
-                  "How does Pebble train on free GPUs?",
-                  "Why is Mamba faster than a Transformer?",
-                  "Explain the architecture in simple terms",
-                  "Show me the code for selective scan",
-                  "Tell me about this project",
-                ].map((s) => (
-                  <button
-                    key={s}
-                    className="suggestion-chip"
-                    onClick={() => {
-                      setPrompt(s);
-                      setTimeout(() => {
-                        const btn = document.querySelector(".btn-generate") as HTMLButtonElement;
-                        if (btn && !btn.disabled) btn.click();
-                      }, 50);
-                    }}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-
-          {/* ── Output Screen & Metrics ────────────────────────────────────── */}
-          <motion.div
-            custom={4}
-            variants={fadeUp}
-            style={{ marginTop: "var(--space-2xl)" }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span className="label">Response Output</span>
-              {isGenerating && (
-                <span className="label" style={{ color: "var(--terracotta)", textTransform: "none" }}>
-                  Generating tokens...
-                </span>
-              )}
-            </div>
-
-            <div className="playground-output" ref={outputRef} style={{ marginTop: "var(--space-sm)" }}>
+            {/* Response Output Box */}
+            <div className="playground-output" ref={outputRef}>
               {output ? (
                 <p className="output-text">{output}</p>
               ) : (
                 <p className="output-placeholder">
-                  Select a prompt above or type a custom question, then click Generate.
+                  Select a prompt above or type a question to see Pebble generate output token-by-token.
                 </p>
               )}
             </div>
 
-            {/* ── Performance Stats ─────────────────────────────────────────── */}
+            {/* Integrated Metrics Footer */}
             <div className="playground-stats">
               <div className="stat-item">
                 <span className="stat-label">Tokens</span>
