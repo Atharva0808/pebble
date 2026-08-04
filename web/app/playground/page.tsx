@@ -141,10 +141,10 @@ export default function PlaygroundPage() {
           initial="hidden"
           animate="visible"
           variants={stagger}
-          style={{ maxWidth: "920px", margin: "0 auto" }}
+          style={{ maxWidth: "880px" }}
         >
-          {/* ── Header ────────────────────────────────────────── */}
-          <div style={{ textAlign: "center", marginBottom: "var(--space-xl)" }}>
+          {/* ── Left-Aligned Header ────────────────────────────────────────── */}
+          <div style={{ textAlign: "left", marginBottom: "var(--space-xl)" }}>
             <motion.span className="label" custom={0} variants={fadeUp}>
               Playground
             </motion.span>
@@ -158,60 +158,33 @@ export default function PlaygroundPage() {
             <motion.p
               custom={2}
               variants={fadeUp}
-              style={{ marginTop: "var(--space-xs)", marginInline: "auto", fontSize: "0.9375rem" }}
+              style={{ marginTop: "var(--space-xs)", fontSize: "0.9375rem" }}
             >
-              Selective State Space Model · Linear-Time Token Generation
+              Interactive demonstration of linear-time Mamba-2 token generation.
             </motion.p>
           </div>
 
-          {/* ── Dark Obsidian AI Console ────────────────────────────── */}
+          {/* ── Minimal Studio Interface ────────────────────────────── */}
           <motion.div
             custom={3}
             variants={fadeUp}
-            className="playground-console"
+            className="minimal-playground"
           >
-            {/* Console Header Bar */}
-            <div className="console-header">
-              <div className="console-dots">
-                <span className="dot dot-red" />
-                <span className="dot dot-yellow" />
-                <span className="dot dot-green" />
-              </div>
-              <div className="console-title">
-                pebble-mamba2-120m :: webgpu
-              </div>
-              <div className="console-status">
-                <span className="status-indicator" />
-                {isGenerating ? "GENERATING..." : "READY"}
-              </div>
-            </div>
-
-            {/* Console Output Screen */}
-            <div className="console-screen" ref={outputRef}>
-              {output ? (
-                <p className="console-output-text">{output}</p>
-              ) : (
-                <div className="console-placeholder">
-                  <p>← Select a quick prompt below or type your question to start real-time token streaming.</p>
-                </div>
-              )}
-            </div>
-
-            {/* Console Quick Prompts */}
-            <div className="console-prompts">
+            {/* Quick Prompt Suggestions */}
+            <div className="minimal-prompts">
               {[
+                "Hi, who are you?",
                 "What is a state space model?",
-                "Why is Mamba faster than Transformers?",
+                "Why is Mamba faster than a Transformer?",
                 "Show selective scan code",
-                "Who built Pebble?",
               ].map((s) => (
                 <button
                   key={s}
-                  className="console-prompt-pill"
+                  className="minimal-prompt-chip"
                   onClick={() => {
                     setPrompt(s);
                     setTimeout(() => {
-                      const btn = document.querySelector(".btn-console-generate") as HTMLButtonElement;
+                      const btn = document.querySelector(".btn-minimal-generate") as HTMLButtonElement;
                       if (btn && !btn.disabled) btn.click();
                     }, 50);
                   }}
@@ -221,29 +194,29 @@ export default function PlaygroundPage() {
               ))}
             </div>
 
-            {/* Console Input Bar & Metrics */}
-            <div className="console-footer">
-              <div className="console-input-row">
-                <input
-                  type="text"
-                  className="console-input"
-                  placeholder="Type your question..."
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleGenerate();
-                    }
-                  }}
-                />
+            {/* Input Box */}
+            <div className="minimal-input-wrapper">
+              <textarea
+                className="minimal-input"
+                placeholder="Ask a question or select a prompt above..."
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleGenerate();
+                  }
+                }}
+                rows={2}
+              />
+              <div className="minimal-input-action">
                 {isGenerating ? (
-                  <button className="btn-console-stop" onClick={handleStop}>
+                  <button className="btn-minimal-stop" onClick={handleStop}>
                     Stop
                   </button>
                 ) : (
                   <button
-                    className="btn-console-generate"
+                    className="btn-minimal-generate"
                     onClick={handleGenerate}
                     disabled={!prompt.trim()}
                   >
@@ -251,14 +224,17 @@ export default function PlaygroundPage() {
                   </button>
                 )}
               </div>
+            </div>
 
-              {/* Console Metrics */}
-              <div className="console-metrics">
-                <span><strong>TOKENS:</strong> {tokensGenerated}</span>
-                <span><strong>SPEED:</strong> {tokPerSec} tok/s</span>
-                <span><strong>TIME:</strong> {(elapsedMs / 1000).toFixed(2)}s</span>
-                <span><strong>RUNTIME:</strong> WebGPU Demo</span>
-              </div>
+            {/* Response Output Window */}
+            <div className="minimal-output" ref={outputRef}>
+              {output ? (
+                <p className="minimal-output-text">{output}</p>
+              ) : (
+                <p className="minimal-output-placeholder">
+                  Select a prompt above or type a question to see Pebble generate output token-by-token.
+                </p>
+              )}
             </div>
           </motion.div>
         </motion.div>

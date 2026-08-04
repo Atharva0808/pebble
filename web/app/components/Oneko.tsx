@@ -15,10 +15,10 @@ export default function Oneko() {
     const nekoEl = document.createElement("div");
     nekoEl.id = "oneko";
 
-    let nekoPosX = 32;
-    let nekoPosY = 32;
-    let mousePosX = 0;
-    let mousePosY = 0;
+    let nekoPosX = 120;
+    let nekoPosY = 120;
+    let mousePosX = 300;
+    let mousePosY = 300;
     let frameCount = 0;
     let idleTime = 0;
     let idleAnimation: string | null = null;
@@ -181,13 +181,12 @@ export default function Oneko() {
     nekoEl.style.height = "32px";
     nekoEl.style.position = "fixed";
     nekoEl.style.pointerEvents = "none";
-    nekoEl.style.backgroundImage =
-      "url('https://raw.githubusercontent.com/adryd32/oneko.js/main/oneko.gif')";
+    nekoEl.style.backgroundImage = "url('/oneko.gif')";
     nekoEl.style.imageRendering = "pixelated";
-    nekoEl.style.zIndex = "999";
+    nekoEl.style.zIndex = "999999";
 
-    nekoEl.style.left = "32px";
-    nekoEl.style.top = "32px";
+    nekoEl.style.left = `${nekoPosX - 16}px`;
+    nekoEl.style.top = `${nekoPosY - 16}px`;
 
     document.body.appendChild(nekoEl);
 
