@@ -147,7 +147,7 @@ p {
 }
 
 .section {
-  padding: var(--space-6xl) 0;
+  padding: var(--space-3xl) 0;
 }
 
 .section-divider {
@@ -163,21 +163,22 @@ p {
   top: var(--space-md);
   left: 50%;
   transform: translateX(-50%);
-  width: calc(100% - var(--space-2xl));
-  max-width: var(--max-width);
-  height: 52px;
+  width: auto;
+  max-width: 800px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 var(--space-xl);
-  background-color: rgba(250, 250, 247, 0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--stone-300);
-  border-radius: 100px;
-  box-shadow: 0 4px 24px rgba(15, 15, 12, 0.05);
+  gap: var(--space-3xl);
+  background-color: rgba(250, 250, 247, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--stone-200);
+  border-radius: 12px;
+  box-shadow: 0 2px 20px rgba(15, 15, 12, 0.06);
   z-index: 100;
-  transition: all var(--duration-normal) var(--ease-out);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .nav-logo {
@@ -218,11 +219,12 @@ p {
 
 /* ── Hero ───────────────────────────────────────────────────────────────── */
 .hero {
-  min-height: calc(100vh - 80px);
+  min-height: auto;
   display: flex;
   flex-direction: column;
   justify-content: center;
   padding-top: calc(var(--nav-height) + var(--space-3xl));
+  padding-bottom: var(--space-3xl);
 }
 
 .hero-content {
@@ -594,7 +596,7 @@ p {
 
 /* ── Footer ─────────────────────────────────────────────────────────────── */
 .footer {
-  padding: var(--space-4xl) 0;
+  padding: var(--space-2xl) 0;
   border-top: 1px solid var(--stone-200);
 }
 

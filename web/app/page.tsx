@@ -108,23 +108,23 @@ export default function Home() {
           viewport={{ once: true, margin: "-100px" }}
           variants={stagger}
         >
-          <motion.span className="label" custom={0} variants={fadeUp}>
-            Architecture
-          </motion.span>
-          <motion.h2
-            custom={1}
-            variants={fadeUp}
-            style={{ marginTop: "var(--space-md)" }}
-          >
-            Beyond the Transformer.
-          </motion.h2>
-
           <div className="arch-grid">
             <motion.div
               className="arch-description"
               custom={2}
               variants={fadeUp}
             >
+              <motion.span className="label" custom={0} variants={fadeUp}>
+                Architecture
+              </motion.span>
+              <motion.h2
+                custom={1}
+                variants={fadeUp}
+                style={{ marginTop: "var(--space-xs)", marginBottom: "var(--space-lg)" }}
+              >
+                Beyond the Transformer.
+              </motion.h2>
+
               <p>
                 While the industry fights over attention mechanisms, Pebble
                 moves forward. Built on the Mamba-2 Selective State Space Model,
@@ -199,10 +199,6 @@ export default function Home() {
         </motion.div>
       </section>
 
-      <div className="container">
-        <hr className="section-divider" />
-      </div>
-
       {/* ── Features ────────────────────────────────────────────────── */}
       <section className="section container" id="features">
         <motion.div
@@ -269,10 +265,6 @@ export default function Home() {
           </div>
         </motion.div>
       </section>
-
-      <div className="container">
-        <hr className="section-divider" />
-      </div>
 
       {/* ── Benchmarks ──────────────────────────────────────────────── */}
       <section className="section container" id="benchmarks">
@@ -355,10 +347,6 @@ export default function Home() {
         </motion.div>
       </section>
 
-      <div className="container">
-        <hr className="section-divider" />
-      </div>
-
       {/* ── Code ────────────────────────────────────────────────────── */}
       <section className="section container" id="code">
         <motion.div
@@ -367,19 +355,19 @@ export default function Home() {
           viewport={{ once: true, margin: "-100px" }}
           variants={stagger}
         >
-          <motion.span className="label" custom={0} variants={fadeUp}>
-            Implementation
-          </motion.span>
-          <motion.h2
-            custom={1}
-            variants={fadeUp}
-            style={{ marginTop: "var(--space-md)" }}
-          >
-            Read the source.
-          </motion.h2>
-
           <div className="code-section">
             <motion.div custom={2} variants={fadeUp}>
+              <motion.span className="label" custom={0} variants={fadeUp}>
+                Implementation
+              </motion.span>
+              <motion.h2
+                custom={1}
+                variants={fadeUp}
+                style={{ marginTop: "var(--space-xs)", marginBottom: "var(--space-lg)" }}
+              >
+                Read the source.
+              </motion.h2>
+
               <p>
                 The selective scan is the mathematical heart of the Mamba
                 architecture. It replaces attention with a recurrence that
