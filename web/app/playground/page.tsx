@@ -141,7 +141,7 @@ export default function PlaygroundPage() {
           initial="hidden"
           animate="visible"
           variants={stagger}
-          style={{ maxWidth: "1100px", margin: "0 auto" }}
+          style={{ maxWidth: "920px", margin: "0 auto" }}
         >
           {/* ── Header ────────────────────────────────────────── */}
           <div style={{ textAlign: "center", marginBottom: "var(--space-xl)" }}>
@@ -160,128 +160,104 @@ export default function PlaygroundPage() {
               variants={fadeUp}
               style={{ marginTop: "var(--space-xs)", marginInline: "auto", fontSize: "0.9375rem" }}
             >
-              Interactive demonstration of linear-time Mamba-2 token generation.
+              Selective State Space Model · Linear-Time Token Generation
             </motion.p>
           </div>
 
-          {/* ── Side-by-Side Playground Grid Layout ────────────── */}
+          {/* ── Dark Obsidian AI Console ────────────────────────────── */}
           <motion.div
             custom={3}
             variants={fadeUp}
-            className="playground-grid"
+            className="playground-console"
           >
-            {/* Left Column: Input & Quick Prompts */}
-            <div className="playground-col-left">
-              <div className="playground-card">
-                <span className="label" style={{ marginBottom: "var(--space-sm)", display: "block" }}>
-                  Prompt Input
-                </span>
-                <div className="playground-input-wrapper">
-                  <textarea
-                    className="playground-input"
-                    placeholder="Ask a question or select a prompt below..."
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleGenerate();
-                      }
-                    }}
-                    rows={4}
-                  />
-                  <div className="playground-actions">
-                    {isGenerating ? (
-                      <button className="btn-stop" onClick={handleStop}>
-                        Stop
-                      </button>
-                    ) : (
-                      <button
-                        className="btn-generate"
-                        onClick={handleGenerate}
-                        disabled={!prompt.trim()}
-                      >
-                        Generate
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Quick Prompts Strip */}
-                <div style={{ marginTop: "var(--space-lg)" }}>
-                  <span className="label" style={{ fontSize: "0.625rem", color: "var(--stone-400)", marginBottom: "var(--space-xs)", display: "block" }}>
-                    Quick Prompts
-                  </span>
-                  <div className="suggestions">
-                    {[
-                      "Hi, who are you?",
-                      "What is a state space model?",
-                      "Why is Mamba faster than a Transformer?",
-                      "How does Pebble train on free GPUs?",
-                      "Show me the code for selective scan",
-                    ].map((s) => (
-                      <button
-                        key={s}
-                        className="suggestion-chip"
-                        onClick={() => {
-                          setPrompt(s);
-                          setTimeout(() => {
-                            const btn = document.querySelector(".btn-generate") as HTMLButtonElement;
-                            if (btn && !btn.disabled) btn.click();
-                          }, 50);
-                        }}
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+            {/* Console Header Bar */}
+            <div className="console-header">
+              <div className="console-dots">
+                <span className="dot dot-red" />
+                <span className="dot dot-yellow" />
+                <span className="dot dot-green" />
+              </div>
+              <div className="console-title">
+                pebble-mamba2-120m :: webgpu
+              </div>
+              <div className="console-status">
+                <span className="status-indicator" />
+                {isGenerating ? "GENERATING..." : "READY"}
               </div>
             </div>
 
-            {/* Right Column: Response Output & Performance Metrics */}
-            <div className="playground-col-right">
-              <div className="playground-card" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-sm)" }}>
-                  <span className="label">Response Output</span>
-                  {isGenerating && (
-                    <span className="label" style={{ color: "var(--terracotta)", textTransform: "none" }}>
-                      Generating tokens...
-                    </span>
-                  )}
+            {/* Console Output Screen */}
+            <div className="console-screen" ref={outputRef}>
+              {output ? (
+                <p className="console-output-text">{output}</p>
+              ) : (
+                <div className="console-placeholder">
+                  <p>← Select a quick prompt below or type your question to start real-time token streaming.</p>
                 </div>
+              )}
+            </div>
 
-                <div className="playground-output" ref={outputRef} style={{ flex: 1 }}>
-                  {output ? (
-                    <p className="output-text">{output}</p>
-                  ) : (
-                    <p className="output-placeholder">
-                      Select a quick prompt or type a custom question on the left to see Pebble generate output token-by-token.
-                    </p>
-                  )}
-                </div>
+            {/* Console Quick Prompts */}
+            <div className="console-prompts">
+              {[
+                "What is a state space model?",
+                "Why is Mamba faster than Transformers?",
+                "Show selective scan code",
+                "Who built Pebble?",
+              ].map((s) => (
+                <button
+                  key={s}
+                  className="console-prompt-pill"
+                  onClick={() => {
+                    setPrompt(s);
+                    setTimeout(() => {
+                      const btn = document.querySelector(".btn-console-generate") as HTMLButtonElement;
+                      if (btn && !btn.disabled) btn.click();
+                    }, 50);
+                  }}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
 
-                {/* Performance Metrics Bar */}
-                <div className="playground-stats">
-                  <div className="stat-item">
-                    <span className="stat-label">Tokens</span>
-                    <span className="stat-value">{tokensGenerated}</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-label">Speed</span>
-                    <span className="stat-value">{tokPerSec} tok/s</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-label">Elapsed</span>
-                    <span className="stat-value">
-                      {(elapsedMs / 1000).toFixed(2)}s
-                    </span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-label">Runtime</span>
-                    <span className="stat-value">WebGPU (Demo)</span>
-                  </div>
-                </div>
+            {/* Console Input Bar & Metrics */}
+            <div className="console-footer">
+              <div className="console-input-row">
+                <input
+                  type="text"
+                  className="console-input"
+                  placeholder="Type your question..."
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleGenerate();
+                    }
+                  }}
+                />
+                {isGenerating ? (
+                  <button className="btn-console-stop" onClick={handleStop}>
+                    Stop
+                  </button>
+                ) : (
+                  <button
+                    className="btn-console-generate"
+                    onClick={handleGenerate}
+                    disabled={!prompt.trim()}
+                  >
+                    Generate
+                  </button>
+                )}
+              </div>
+
+              {/* Console Metrics */}
+              <div className="console-metrics">
+                <span><strong>TOKENS:</strong> {tokensGenerated}</span>
+                <span><strong>SPEED:</strong> {tokPerSec} tok/s</span>
+                <span><strong>TIME:</strong> {(elapsedMs / 1000).toFixed(2)}s</span>
+                <span><strong>RUNTIME:</strong> WebGPU Demo</span>
               </div>
             </div>
           </motion.div>

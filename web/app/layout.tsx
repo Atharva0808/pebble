@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   authors: [{ name: "Atharva" }],
 };
 
+import Oneko from "./components/Oneko";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -38,7 +40,10 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        <Oneko />
+        {children}
+      </body>
     </html>
   );
 }
