@@ -238,11 +238,25 @@ export default function PlaygroundPage() {
             </div>
 
             {/* Aesthetic Disclaimer Banner */}
-            <div className="playground-disclaimer">
-              <span className="disclaimer-badge">Checkpoint Step 1,500 · Loss 7.2</span>
-              <span className="disclaimer-text">
-                Output generated from raw 120M Mamba-2 trained weights. Demonstrates initial tokenization and vocabulary acquisition.
-              </span>
+            <div className="playground-disclaimer-card">
+              <div className="disclaimer-header">
+                <div className="disclaimer-status">
+                  <span className="status-dot"></span>
+                  <span className="status-title">EARLY MODEL CHECKPOINT</span>
+                </div>
+                <div className="disclaimer-metrics">
+                  <span className="metric-pill">Step 1,500 / 50,000</span>
+                  <span className="metric-pill">Loss: 7.2 (Target &lt; 3.0)</span>
+                </div>
+              </div>
+              <div className="disclaimer-body">
+                <p className="disclaimer-text-main">
+                  <strong>Current Output Behavior:</strong> Model generations currently consist of <em>random words, incomplete token fragments, and raw BPE sampling</em> rather than coherent sentences.
+                </p>
+                <p className="disclaimer-text-sub">
+                  <strong>Why it occurs:</strong> Training was paused at Step 1,500 (Loss 7.2) due to GPU compute limits. At this stage, the Mamba-2 model has learned vocabulary tokens and character boundaries, but requires ~50k steps (Loss &lt; 3.0) for grammatical syntax and semantic reasoning.
+                </p>
+              </div>
             </div>
 
             {/* Response Output Window */}
