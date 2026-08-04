@@ -23,7 +23,7 @@ export default function Oneko() {
     let idleTime = 0;
     let idleAnimation: string | null = null;
     let idleAnimationFrame = 0;
-    const nekoSpeed = 18;
+    const nekoSpeed = 10;
 
     const spriteSets: Record<string, number[][]> = {
       idle: [[-3, -3]],
@@ -191,7 +191,7 @@ export default function Oneko() {
     document.body.appendChild(nekoEl);
 
     document.addEventListener("mousemove", onMouseMove);
-    const interval = setInterval(update, 33);
+    const interval = setInterval(update, 66);
 
     return () => {
       document.removeEventListener("mousemove", onMouseMove);
